@@ -14,9 +14,11 @@
   },
   "scripts": {
     "dev": "concurrently --kill-others \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "db:init": "npm run db:init --workspace backend",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
+    "test:database": "npm run test:database --workspace backend",
     "build": "npm run build --workspaces",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },

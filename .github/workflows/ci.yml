@@ -8,6 +8,24 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: mealpilot-ci
+          MYSQL_ROOT_HOST: "%"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pmealpilot-ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: mealpilot-ci
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -18,3 +36,5 @@ jobs:
         run: npm ci
       - name: Run linting, type checks, tests, and builds
         run: npm run check
+      - name: Test accounts against MySQL
+        run: npm run test:database

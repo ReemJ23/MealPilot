@@ -1,82 +1,206 @@
 import { Component } from "react";
+import type { FormEvent } from "react";
 
-interface AppState {
-  connection: "checking" | "connected" | "offline";
+interface User {
+  id: number;
+  name: string;
+  email: string;
 }
 
-const messages = {
-  checking: "Checking your connection",
-  connected: "MealPilot is connected",
-  offline: "Connection unavailable. Check that the server is running.",
-};
+interface AppState {
+  status: "checking" | "ready" | "offline";
+  user: User | null;
+  mode: "login" | "register";
+  name: string;
+  email: string;
+  password: string;
+  pending: boolean;
+  error: string;
+}
 
 export default class App extends Component<Record<string, never>, AppState> {
-  override state: AppState = { connection: "checking" };
+  override state: AppState = {
+    status: "checking", user: null, mode: "login",
+    name: "", email: "", password: "", pending: false, error: "",
+  };
   private requestController?: AbortController;
 
   override componentDidMount(): void {
-    void this.checkConnection();
+    void this.restoreSession();
   }
 
   override componentWillUnmount(): void {
     this.requestController?.abort();
   }
 
-  private checkConnection = async (): Promise<void> => {
-    // Stop the previous request when retrying or leaving the page.
+  private startRequest(): AbortController {
     this.requestController?.abort();
-    const controller = new AbortController();
-    this.requestController = controller;
-    this.setState({ connection: "checking" });
+    this.requestController = new AbortController();
+    return this.requestController;
+  }
+
+  private async request(path: string, controller: AbortController, options: RequestInit = {}): Promise<Response> {
+    // The browser sends the session cookie. Passwords and tokens are never saved locally.
+    return fetch(`/api/auth/${path}`, {
+      ...options,
+      credentials: "same-origin",
+      signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
+    }).catch(() => {
+      throw new Error("Connection unavailable. Check that the server is running.");
+    });
+  }
+
+  private async readUser(response: Response): Promise<User> {
+    const data: { user?: User; message?: string } = await response.json();
+    if (!response.ok || !data.user) {
+      throw new Error(data.message || "Unable to complete your request. Please try again.");
+    }
+    return data.user;
+  }
+
+  private restoreSession = async (): Promise<void> => {
+    const controller = this.startRequest();
+    this.setState({ status: "checking", error: "" });
+    try {
+      const response = await this.request("me", controller);
+      // A missing or expired session is normal and opens the login form.
+      const user = response.status === 401 ? null : await this.readUser(response);
+      if (!controller.signal.aborted) this.setState({ status: "ready", user });
+    } catch {
+      if (!controller.signal.aborted) this.setState({ status: "offline" });
+    }
+  };
+
+  private submitAccount = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (this.state.pending) return;
+    const { mode, name, email, password } = this.state;
+    const controller = this.startRequest();
+    this.setState({ pending: true, error: "" });
 
     try {
-      const response = await fetch("/api/health", {
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8_000)]),
+      const response = await this.request(mode, controller, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mode === "register" ? { name, email, password } : { email, password }),
       });
-      const data: unknown = await response.json();
-
-      // Confirm that the response came from the expected application.
-      if (
-        !response.ok || typeof data !== "object" || data === null ||
-        !("status" in data) || data.status !== "ok" ||
-        !("service" in data) || data.service !== "mealpilot-api"
-      ) {
-        throw new Error("The server is unavailable.");
-      }
-
+      const user = await this.readUser(response);
       if (!controller.signal.aborted) {
-        this.setState({ connection: "connected" });
+        this.setState({ user, password: "", name: "", pending: false });
       }
-    } catch {
+    } catch (error) {
       if (!controller.signal.aborted) {
-        this.setState({ connection: "offline" });
+        this.setState({ pending: false, error: error instanceof Error ? error.message : "Unable to sign in." });
       }
     }
   };
 
-  override render() {
-    const { connection } = this.state;
+  private logout = async (): Promise<void> => {
+    if (this.state.pending) return;
+    const controller = this.startRequest();
+    this.setState({ pending: true, error: "" });
+    try {
+      const response = await this.request("logout", controller, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) {
+        const data: { message?: string } = await response.json();
+        throw new Error(data.message || "Unable to log out. Please try again.");
+      }
+      if (!controller.signal.aborted) {
+        this.setState({ user: null, mode: "login", password: "", pending: false });
+      }
+    } catch (error) {
+      // Keep the account visible until the server confirms logout.
+      if (!controller.signal.aborted) {
+        this.setState({ pending: false, error: error instanceof Error ? error.message : "Unable to log out." });
+      }
+    }
+  };
 
+  private switchMode = (): void => {
+    this.setState(({ mode }) => ({
+      mode: mode === "login" ? "register" : "login", password: "", error: "",
+    }));
+  };
+
+  private renderForm() {
+    const { mode, name, email, password, pending, error } = this.state;
+    const registering = mode === "register";
+    return (
+      <section className="card" aria-labelledby="account-heading">
+        <h2 id="account-heading">{registering ? "Create your account" : "Welcome back"}</h2>
+        <p className="intro">{registering ? "Start organizing your kitchen with MealPilot." : "Log in to your MealPilot account."}</p>
+        <form onSubmit={(event) => void this.submitAccount(event)} aria-labelledby="account-heading">
+          <fieldset disabled={pending}>
+            {registering && (
+              <label>
+                Name
+                <input name="name" autoComplete="name" required minLength={2} maxLength={80}
+                  value={name} onChange={(event) => this.setState({ name: event.target.value })} />
+              </label>
+            )}
+            <label>
+              Email
+              <input name="email" type="email" autoComplete="email" required maxLength={254}
+                value={email} onChange={(event) => this.setState({ email: event.target.value })} />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" autoComplete={registering ? "new-password" : "current-password"}
+                required minLength={registering ? 8 : undefined} maxLength={128}
+                aria-describedby={registering ? "password-help" : undefined}
+                value={password} onChange={(event) => this.setState({ password: event.target.value })} />
+            </label>
+            {registering && <p className="hint" id="password-help">Use 8 to 128 characters.</p>}
+            {error && <p className="error" role="alert">{error}</p>}
+            <button className="submit" type="submit">
+              {pending ? "Please wait..." : registering ? "Create account" : "Log in"}
+            </button>
+          </fieldset>
+        </form>
+        <p className="switch-mode">
+          {registering ? "Already have an account? " : "New to MealPilot? "}
+          <button className="text-button" type="button" disabled={pending} onClick={this.switchMode}>
+            {registering ? "Log in" : "Create an account"}
+          </button>
+        </p>
+      </section>
+    );
+  }
+
+  override render() {
+    const { status, user, pending, error } = this.state;
     return (
       <main className="app">
         <header>
           <h1>MealPilot</h1>
           <p>Plan your meals and keep your kitchen organized.</p>
         </header>
-
-        <section className="connection" aria-labelledby="connection-heading">
-          <h2 id="connection-heading">Connection status</h2>
-          <p className={connection} role="status" aria-live="polite">
-            {messages[connection]}
-          </p>
-          {connection === "offline" && (
-            <button type="button" onClick={() => void this.checkConnection()}>
-              Try again
+        {status === "checking" && <p className="card" role="status">Checking your account...</p>}
+        {status === "offline" && (
+          <section className="card" aria-labelledby="connection-heading">
+            <h2 id="connection-heading">Connection unavailable</h2>
+            <p role="alert">Check that the server is running, then try again.</p>
+            <button type="button" onClick={() => void this.restoreSession()}>Try again</button>
+          </section>
+        )}
+        {status === "ready" && (user ? (
+          <section className="card" aria-labelledby="welcome-heading">
+            <h2 id="welcome-heading">Welcome, {user.name}</h2>
+            <p>You are signed in to MealPilot.</p>
+            <dl className="account-details">
+              <dt>Email</dt>
+              <dd>{user.email}</dd>
+            </dl>
+            {error && <p className="error" role="alert">{error}</p>}
+            <button type="button" disabled={pending} onClick={() => void this.logout()}>
+              {pending ? "Logging out..." : "Log out"}
             </button>
-          )}
-        </section>
-
-        <p className="note">The application is in development. More features are coming soon.</p>
+          </section>
+        ) : this.renderForm())}
       </main>
     );
   }
