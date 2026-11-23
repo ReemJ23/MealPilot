@@ -6,12 +6,17 @@
   "scripts": {
     "dev": "node --watch --import tsx src/server.ts",
     "start": "node dist/server.js",
+    "db:init": "node --import tsx scripts/initDatabase.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"**/*.database.test.ts\"",
+    "test:database": "vitest run tests/Auth.database.test.ts",
     "build": "tsc"
   },
   "dependencies": {
-    "express": "5.3.0"
+    "cookie": "2.0.2",
+    "express": "5.3.0",
+    "express-rate-limit": "8.7.5",
+    "mysql2": "3.24.6"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
