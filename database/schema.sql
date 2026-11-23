@@ -32,6 +32,18 @@ CREATE TABLE IF NOT EXISTS recipe_ingredients (
   CONSTRAINT ingredients_recipe FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- A calendar entry assigns an owned recipe to a date without a time zone.
+CREATE TABLE IF NOT EXISTS planned_meals (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  recipe_id INT UNSIGNED NOT NULL,
+  planned_date DATE NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX meals_owner_date (user_id, planned_date, id),
+  CONSTRAINT meals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT meals_recipe FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Only a hash of each session token is stored in the database.
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,

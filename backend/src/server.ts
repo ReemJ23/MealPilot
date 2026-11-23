@@ -1,6 +1,7 @@
 import { Application } from "./Application.js";
 import { AuthRepository } from "./AuthRepository.js";
 import { RecipeRepository } from "./RecipeRepository.js";
+import { MealPlanRepository } from "./MealPlanRepository.js";
 import { createDatabasePool } from "./database.js";
 
 const pool = createDatabasePool();
@@ -8,6 +9,7 @@ const application = new Application(new AuthRepository(pool), {
   origin: process.env.APP_ORIGIN || "http://127.0.0.1:5173",
   secureCookies: process.env.NODE_ENV === "production",
   recipes: new RecipeRepository(pool),
+  meals: new MealPlanRepository(pool),
 });
 const port = Number(process.env.PORT || 3000);
 

@@ -96,7 +96,7 @@ export default class RecipeManager extends Component<RecipeManagerProps, RecipeM
 
   private deleteRecipe = async (): Promise<void> => {
     const recipe = this.state.selected;
-    if (!recipe || this.state.pending || !window.confirm(`Delete "${recipe.name}"? This cannot be undone.`)) return;
+    if (!recipe || this.state.pending || !window.confirm(`Delete "${recipe.name}" and remove its planned meals? This cannot be undone.`)) return;
     const controller = this.startRequest();
     this.setState({ pending: true, error: "" });
     try {

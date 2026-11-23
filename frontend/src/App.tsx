@@ -1,6 +1,7 @@
 import { Component } from "react";
 import type { FormEvent } from "react";
 import RecipeManager from "./RecipeManager";
+import MealCalendar from "./MealCalendar";
 
 interface User {
   id: number;
@@ -12,6 +13,7 @@ interface AppState {
   status: "checking" | "ready" | "offline";
   user: User | null;
   mode: "login" | "register";
+  section: "recipes" | "calendar";
   name: string;
   email: string;
   password: string;
@@ -21,7 +23,7 @@ interface AppState {
 
 export default class App extends Component<Record<string, never>, AppState> {
   override state: AppState = {
-    status: "checking", user: null, mode: "login",
+    status: "checking", user: null, mode: "login", section: "recipes",
     name: "", email: "", password: "", pending: false, error: "",
   };
   private requestController?: AbortController;
@@ -87,7 +89,7 @@ export default class App extends Component<Record<string, never>, AppState> {
       });
       const user = await this.readUser(response);
       if (!controller.signal.aborted) {
-        this.setState({ user, password: "", name: "", pending: false });
+        this.setState({ user, password: "", name: "", pending: false, section: "recipes" });
       }
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -132,6 +134,8 @@ export default class App extends Component<Record<string, never>, AppState> {
     this.setState({ user: null, mode: "login", password: "", pending: false,
       error: "Your session has expired. Please log in again." });
   };
+
+  private openRecipes = (): void => { this.setState({ section: "recipes" }); };
 
   private renderForm() {
     const { mode, name, email, password, pending, error } = this.state;
@@ -179,7 +183,7 @@ export default class App extends Component<Record<string, never>, AppState> {
   }
 
   override render() {
-    const { status, user, pending, error } = this.state;
+    const { status, user, pending, error, section } = this.state;
     return (
       <main className={`app${user ? " app-signed-in" : ""}`}>
         <header>
@@ -206,7 +210,15 @@ export default class App extends Component<Record<string, never>, AppState> {
             </button>
             {error && <p className="error" role="alert">{error}</p>}
           </section>
-          <RecipeManager key={user.id} onSessionExpired={this.sessionExpired} />
+          <nav className="feature-navigation" aria-label="MealPilot sections">
+            <button type="button" className={section === "recipes" ? "" : "secondary"}
+              aria-pressed={section === "recipes"} disabled={pending} onClick={this.openRecipes}>My recipes</button>
+            <button type="button" className={section === "calendar" ? "" : "secondary"}
+              aria-pressed={section === "calendar"} disabled={pending}
+              onClick={() => this.setState({ section: "calendar" })}>Meal calendar</button>
+          </nav>
+          {section === "recipes" ? <RecipeManager key={user.id} onSessionExpired={this.sessionExpired} /> :
+            <MealCalendar key={user.id} onSessionExpired={this.sessionExpired} onOpenRecipes={this.openRecipes} />}
           </>
         ) : this.renderForm())}
       </main>
