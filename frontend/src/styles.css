@@ -58,7 +58,7 @@ label {
   font-weight: 600;
 }
 
-input, textarea {
+input, textarea, select {
   display: block;
   width: 100%;
   margin-top: 7px;
@@ -82,10 +82,10 @@ button {
 }
 
 button:hover:not(:disabled) { background: #17432c; }
-button:disabled, input:disabled, textarea:disabled { opacity: 0.65; }
+button:disabled, input:disabled, textarea:disabled, select:disabled { opacity: 0.65; }
 button:disabled { cursor: wait; }
 
-button:focus-visible, input:focus-visible, textarea:focus-visible {
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
   outline: 3px solid #b16936;
   outline-offset: 3px;
 }
@@ -156,8 +156,23 @@ textarea { resize: vertical; line-height: 1.6; }
 .recipe-content h3 { font-size: 1.1rem; margin: 0 0 12px; }
 .ingredient-list { margin: 0; padding-left: 22px; line-height: 1.8; overflow-wrap: anywhere; }
 .instructions { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.feature-navigation { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.meal-calendar { margin-top: 32px; }
+.calendar-help { color: #59645c; }
+.calendar-card { margin-top: 24px; padding: 20px; }
+.calendar-card {
+  --fc-monarch-primary: #245b3e;
+  --fc-monarch-primary-over: #17432c;
+  --fc-monarch-primary-down: #17432c;
+  --fc-monarch-foreground: #253d32;
+}
+.meal-form { margin-top: 20px; }
+.meal-form .actions { margin-top: 8px; }
+.meal-calendar-title { font-size: 1.2rem; }
 
 @media (max-width: 700px) {
+  .meal-calendar-toolbar { flex-wrap: wrap; gap: 12px; }
+  .meal-calendar-toolbar-section { justify-content: center; }
   .recipe-grid, .recipe-content { grid-template-columns: 1fr; }
   .ingredient-fields { grid-template-columns: 1fr 1fr; }
   .ingredient-name { grid-column: 1 / -1; }
@@ -166,5 +181,6 @@ textarea { resize: vertical; line-height: 1.6; }
 @media (max-width: 480px) {
   .app { margin-top: 32px; padding: 0 16px; }
   .card { padding: 22px; }
+  .calendar-card { padding: 10px; }
   .form-grid { grid-template-columns: 1fr; }
 }

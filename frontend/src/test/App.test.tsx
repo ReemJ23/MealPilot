@@ -170,3 +170,33 @@ describe("MealPilot accounts", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("MealPilot calendar navigation", () => {
+  it("opens the calendar and returns to recipes when the user needs a recipe first", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => Promise.resolve(
+      String(input) === "/api/auth/me" ? jsonResponse({ user }) :
+        String(input) === "/api/recipes" ? jsonResponse({ recipes: [] }) : jsonResponse({ meals: [] }),
+    ));
+    render(<App />);
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Meal calendar" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Go to my recipes" }));
+
+    expect(await screen.findByRole("heading", { name: "My recipes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Welcome, Reem" })).toBeInTheDocument();
+  });
+
+  it("returns to login when the calendar API reports an expired session", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => Promise.resolve(
+      String(input) === "/api/auth/me" ? jsonResponse({ user }) :
+        String(input) === "/api/recipes" ? jsonResponse({ recipes: [] }) : loggedOut(),
+    ));
+    render(<App />);
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Meal calendar" }));
+
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Your session has expired. Please log in again.");
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+});
