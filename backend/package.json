@@ -8,8 +8,8 @@
     "start": "node dist/server.js",
     "db:init": "node --import tsx scripts/initDatabase.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --exclude \"**/*.database.test.ts\"",
-    "test:database": "vitest run tests/Auth.database.test.ts",
+    "test": "vitest run --no-file-parallelism --exclude \"**/*.database.test.ts\"",
+    "test:database": "vitest run .database.test.ts",
     "build": "tsc"
   },
   "dependencies": {

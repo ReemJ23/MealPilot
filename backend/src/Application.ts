@@ -2,26 +2,45 @@ import express from "express";
 import type { ErrorRequestHandler, Express } from "express";
 import { AuthController } from "./AuthController.js";
 import type { AccountStore } from "./AuthRepository.js";
+import { RecipeController } from "./RecipeController.js";
+import type { RecipeStore } from "./RecipeRepository.js";
 
 /** Keep application construction separate from opening a network port. */
 export class Application {
   readonly app: Express;
   readonly auth: AuthController;
 
-  constructor(repository: AccountStore, options: { origin?: string; secureCookies?: boolean } = {}) {
+  constructor(repository: AccountStore, options: { origin?: string; secureCookies?: boolean; recipes?: RecipeStore } = {}) {
     this.app = express();
     this.app.disable("x-powered-by");
-    this.auth = new AuthController(
-      repository,
-      options.origin ?? "http://127.0.0.1:5173",
-      options.secureCookies ?? false,
-    );
+    this.auth = new AuthController(repository, options.secureCookies ?? false);
+
+    // The same browser-write checks apply to accounts and all personal data.
+    const origin = options.origin ?? "http://127.0.0.1:5173";
+    this.app.use("/api", (request, response, next) => {
+      response.set("Cache-Control", "no-store");
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        if (request.get("origin") && request.get("origin") !== origin) {
+          response.status(403).json({ message: "This request is not allowed." });
+          return;
+        }
+        if (!request.is("application/json")) {
+          response.status(415).json({ message: "Send the request as JSON." });
+          return;
+        }
+      }
+      next();
+    });
+    this.app.use("/api", express.json({ limit: "64kb" }));
 
     // A simple health endpoint remains useful for deployment checks.
     this.app.get("/api/health", (_request, response) => {
       response.json({ status: "ok", service: "mealpilot-api" });
     });
     this.app.use("/api/auth", this.auth.router);
+    if (options.recipes) {
+      this.app.use("/api/recipes", this.auth.requireUser, new RecipeController(options.recipes).router);
+    }
 
     this.app.use((_request, response) => {
       response.status(404).json({ message: "Route not found" });

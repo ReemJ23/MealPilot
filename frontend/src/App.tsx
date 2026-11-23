@@ -1,5 +1,6 @@
 import { Component } from "react";
 import type { FormEvent } from "react";
+import RecipeManager from "./RecipeManager";
 
 interface User {
   id: number;
@@ -126,6 +127,12 @@ export default class App extends Component<Record<string, never>, AppState> {
     }));
   };
 
+  private sessionExpired = (): void => {
+    this.requestController?.abort();
+    this.setState({ user: null, mode: "login", password: "", pending: false,
+      error: "Your session has expired. Please log in again." });
+  };
+
   private renderForm() {
     const { mode, name, email, password, pending, error } = this.state;
     const registering = mode === "register";
@@ -174,7 +181,7 @@ export default class App extends Component<Record<string, never>, AppState> {
   override render() {
     const { status, user, pending, error } = this.state;
     return (
-      <main className="app">
+      <main className={`app${user ? " app-signed-in" : ""}`}>
         <header>
           <h1>MealPilot</h1>
           <p>Plan your meals and keep your kitchen organized.</p>
@@ -188,18 +195,19 @@ export default class App extends Component<Record<string, never>, AppState> {
           </section>
         )}
         {status === "ready" && (user ? (
-          <section className="card" aria-labelledby="welcome-heading">
-            <h2 id="welcome-heading">Welcome, {user.name}</h2>
-            <p>You are signed in to MealPilot.</p>
-            <dl className="account-details">
-              <dt>Email</dt>
-              <dd>{user.email}</dd>
-            </dl>
-            {error && <p className="error" role="alert">{error}</p>}
+          <>
+          <section className="card account-bar" aria-labelledby="welcome-heading">
+            <div>
+              <h2 id="welcome-heading">Welcome, {user.name}</h2>
+              <p>{user.email}</p>
+            </div>
             <button type="button" disabled={pending} onClick={() => void this.logout()}>
               {pending ? "Logging out..." : "Log out"}
             </button>
+            {error && <p className="error" role="alert">{error}</p>}
           </section>
+          <RecipeManager key={user.id} onSessionExpired={this.sessionExpired} />
+          </>
         ) : this.renderForm())}
       </main>
     );
