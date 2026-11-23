@@ -36,5 +36,5 @@ jobs:
         run: npm ci
       - name: Run linting, type checks, tests, and builds
         run: npm run check
-      - name: Test accounts against MySQL
+      - name: Run database integration tests
         run: npm run test:database

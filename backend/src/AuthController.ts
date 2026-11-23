@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { parseCookie } from "cookie";
-import { json, Router } from "express";
+import { Router } from "express";
 import type { CookieOptions, NextFunction, Request, Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import type { AccountStore, User } from "./AuthRepository.js";
@@ -16,27 +16,9 @@ export class AuthController {
 
   constructor(
     private readonly repository: AccountStore,
-    origin: string,
     secureCookies: boolean,
   ) {
     this.cookieOptions = { httpOnly: true, sameSite: "lax", secure: secureCookies, path: "/api" };
-
-    this.router.use((request, response, next) => {
-      response.set("Cache-Control", "no-store");
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        // Only our own frontend may submit browser requests that change an account.
-        if (request.get("origin") && request.get("origin") !== origin) {
-          response.status(403).json({ message: "This request is not allowed." });
-          return;
-        }
-        if (!request.is("application/json")) {
-          response.status(415).json({ message: "Send the request as JSON." });
-          return;
-        }
-      }
-      next();
-    });
-    this.router.use(json({ limit: "16kb" }));
 
     const attemptLimit = rateLimit({
       windowMs: 15 * 60 * 1000,

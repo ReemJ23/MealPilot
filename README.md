@@ -8,7 +8,9 @@ A meal planning and kitchen organization project for CIS 553 Software Engineerin
 
 ## Current stage
 
-Users can create an account, log in, view their account, and log out. Accounts and login sessions are saved in MySQL. Recipes, the meal calendar, inventory, and shopping lists will be added in later branches.
+Users can create an account and manage their own recipe collection. Recipes include a name, category, preparation time, servings, instructions, and an ordered list of ingredients with quantities and optional units. Users can view, edit, and delete their recipes. Accounts and recipes are saved in MySQL.
+
+The meal calendar, inventory, shopping lists, and external recipe browsing will be added in later branches.
 
 Passwords are stored as salted scrypt hashes. Login uses an HttpOnly cookie and a database session that expires after seven days. Logout invalidates that session on the server. The hashing settings follow the [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
@@ -38,9 +40,11 @@ npm.cmd run db:init
 npm.cmd run dev
 ```
 
-The setup command creates `mealpilot` and the tables from `database/schema.sql`. Running it again preserves existing data. No seed data is required for the account feature. Create your own demo account using the registration form.
+The setup command creates `mealpilot` and any missing tables from `database/schema.sql`. Run it again when updating from the accounts branch to add the recipe tables. Existing accounts and data are preserved.
 
 Open [MealPilot](http://127.0.0.1:5173). Use this exact address to match `APP_ORIGIN` in the configuration. Choose **Create an account**, enter your details, and submit. Keep the terminal and MySQL running while using the app. Press `Ctrl+C` in the terminal to stop the application.
+
+After signing in, choose **New recipe** to build your collection. Ingredient quantities support up to three decimal places. Units may be left blank for whole items. Category is a free text field, such as Dinner or Breakfast.
 
 On macOS or Linux, use `npm` instead of `npm.cmd` and `cp backend/.env.example backend/.env` to create the configuration.
 
@@ -63,12 +67,12 @@ These tests create the separate `mealpilot_test` database using the connection s
 | Command | Purpose |
 | --- | --- |
 | `npm.cmd test` | Run frontend and backend tests |
-| `npm.cmd run test:database` | Test actual database persistence and sessions |
+| `npm.cmd run test:database` | Test accounts and recipes against the database |
 | `npm.cmd run lint` | Run static analysis |
 | `npm.cmd run typecheck` | Check TypeScript |
 | `npm.cmd run build` | Build the applications |
 
-The tests cover account validation, duplicate emails, password verification, protected access, session expiration, logout, and frontend error handling. Database tests also verify that login survives a new application instance and that rerunning setup preserves accounts.
+The tests cover authentication, recipe validation, CRUD operations, and frontend error handling. Ownership tests verify that one user cannot read or change another user's recipes. Database tests check persistence, session behavior, ingredient cleanup, and transaction rollback when saving fails.
 
 GitHub Actions runs both check commands on pushes and Pull Requests, using a MySQL 8.4 service for database tests. Check the Actions result after pushing. Local verification for this branch also used MariaDB 11.8.6.
 
@@ -76,12 +80,16 @@ GitHub Actions runs both check commands on pushes and Pull Requests, using a MyS
 
 Register an account and confirm that your name and email appear. Refresh the page and confirm that you remain signed in. Log out, try an incorrect password, then log in with the correct password. Creating another account with the same email should show an error.
 
+Create a recipe with more than one ingredient, open its details, and refresh the page to check persistence. Edit an ingredient quantity and save. Cancel a deletion once, then confirm deletion. A second account should have its own separate collection.
+
+For reproducible demo data, create **Tomato pasta**, category **Dinner**, preparation time **20** minutes, and **2** servings. Add **200 g pasta** and **300 g tomatoes**. Use **Cook the pasta. Simmer the chopped tomatoes and combine with the pasta.** as the instructions. No external service or seed account is required.
+
 ## Project structure
 
 | Location | Purpose |
 | --- | --- |
-| `frontend/src` | Account interface, styles, and frontend tests |
-| `backend/src` | Express application, account logic, and database access |
+| `frontend/src` | Account and recipe interfaces, styles, and frontend tests |
+| `backend/src` | Express application, feature logic, and database access |
 | `backend/tests` | API and database integration tests |
 | `backend/scripts/initDatabase.ts` | Database setup command |
 | `backend/.env.example` | Example local configuration |
