@@ -10,9 +10,11 @@ A meal planning and kitchen organization project for CIS 553 Software Engineerin
 
 Users can create an account and manage their own recipe collection. Recipes include a name, category, preparation time, servings, instructions, and an ordered list of ingredients with quantities and optional units. Users can view, edit, and delete their recipes.
 
-The meal calendar uses [FullCalendar](https://fullcalendar.io/docs/react) to show weekly and monthly plans. Users can assign a saved recipe to a date, change the recipe or date, drag a meal to another day, and remove a planned meal. Accounts, recipes, and calendar entries are saved in MySQL and belong to the signed-in user.
+The meal calendar uses [FullCalendar](https://fullcalendar.io/docs/react) to show weekly and monthly plans. Users can assign a saved recipe to a date, change the recipe or date, drag a meal to another day, and remove a planned meal.
 
-Inventory, shopping lists, and external recipe browsing will be added in later branches.
+Kitchen inventory lets users keep a personal ingredient list with optional quantities and units. They can add, view, edit, and remove items. Accounts and all personal data are saved in MySQL and belong to the signed-in user.
+
+Shopping lists and external recipe browsing will be added in later branches.
 
 Passwords are stored as salted scrypt hashes. Login uses an HttpOnly cookie and a database session that expires after seven days. Logout invalidates that session on the server. The hashing settings follow the [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
@@ -52,6 +54,8 @@ Open **Meal calendar** to plan your saved recipes. Select a date or use **Add me
 
 Removing a calendar entry keeps the original recipe. Deleting a recipe also removes its planned meals, as stated in the deletion confirmation. Calendar dates are stored as dates without time zones or meal times.
 
+Open **Kitchen inventory** to record ingredients you have at home. Ingredient names are required. Quantity and unit are optional, and quantities support up to three decimal places. Leaving quantity blank means the amount has not been recorded. Entering `0` records that none remains. Editing or removing inventory items does not change saved recipes or calendar entries. Inventory amounts are entered manually and are not reduced when a meal is planned.
+
 On macOS or Linux, use `npm` instead of `npm.cmd` and `cp backend/.env.example backend/.env` to create the configuration.
 
 ## Check the project
@@ -73,12 +77,12 @@ These tests create the separate `mealpilot_test` database using the connection s
 | Command | Purpose |
 | --- | --- |
 | `npm.cmd test` | Run frontend and backend tests |
-| `npm.cmd run test:database` | Test accounts, recipes, and planned meals against the database |
+| `npm.cmd run test:database` | Test personal data and login sessions against the database |
 | `npm.cmd run lint` | Run static analysis |
 | `npm.cmd run typecheck` | Check TypeScript |
 | `npm.cmd run build` | Build the applications |
 
-The tests cover authentication, recipe and calendar validation, CRUD operations, and frontend error handling. Ownership tests verify that one user cannot read or change another user's recipes or calendar entries. Database tests check persistence, session behavior, date storage, deletion rules, and transaction rollback when saving a recipe fails. Backend API test files run sequentially to use the setting that passed on Windows.
+The tests cover authentication, input validation, CRUD operations, and frontend error handling. Ownership tests verify that one user cannot read or change another user's personal data. Database tests check persistence, session behavior, date storage, deletion rules, and transaction rollback when saving a recipe fails. Inventory tests distinguish an unrecorded quantity from zero and check decimal quantities. Backend API test files run sequentially to use the setting that passed on Windows.
 
 GitHub Actions runs both check commands on pushes and Pull Requests, using a MySQL 8.4 service for database tests. Check the Actions result after pushing. Local verification for this branch also used MariaDB 11.8.6.
 
@@ -90,13 +94,15 @@ Create a recipe with more than one ingredient, open its details, and refresh the
 
 In **Meal calendar**, add a saved recipe to a date. Refresh the page and reopen **Meal calendar** to check persistence. Switch between week and month views. Change a meal's date using its form, then try dragging it to another day. Remove the planned meal and confirm that the recipe remains in **My recipes**. A second account should have its own calendar.
 
+In **Kitchen inventory**, add **Pasta** with quantity `500` and unit **g**. Add another ingredient with its quantity blank. Refresh the page and reopen the inventory to check persistence. Edit the pasta quantity to `0`, then change it to `250.5`. Cancel a removal once, then confirm removal. Check that the existing recipes and calendar entries remain. A second account should have its own inventory.
+
 For reproducible demo data, create **Tomato pasta**, category **Dinner**, preparation time **20** minutes, and **2** servings. Add **200 g pasta** and **300 g tomatoes**. Use **Cook the pasta. Simmer the chopped tomatoes and combine with the pasta.** as the instructions. No external service or seed account is required.
 
 ## Project structure
 
 | Location | Purpose |
 | --- | --- |
-| `frontend/src` | Account, recipe, and calendar interfaces with their frontend tests |
+| `frontend/src` | User interfaces and their frontend tests |
 | `backend/src` | Express application, feature logic, and database access |
 | `backend/tests` | API and database integration tests |
 | `backend/scripts/initDatabase.ts` | Database setup command |

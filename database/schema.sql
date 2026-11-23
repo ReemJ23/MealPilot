@@ -44,6 +44,19 @@ CREATE TABLE IF NOT EXISTS planned_meals (
   CONSTRAINT meals_recipe FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- A blank quantity means the amount has not been recorded, rather than zero.
+CREATE TABLE IF NOT EXISTS inventory_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  quantity DECIMAL(10,3) NULL DEFAULT NULL,
+  unit VARCHAR(30) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX inventory_owner_name (user_id, name, id),
+  CONSTRAINT inventory_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Only a hash of each session token is stored in the database.
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,

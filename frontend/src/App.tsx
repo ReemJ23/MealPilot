@@ -1,7 +1,10 @@
-import { Component } from "react";
+import { Component, lazy, Suspense } from "react";
 import type { FormEvent } from "react";
 import RecipeManager from "./RecipeManager";
-import MealCalendar from "./MealCalendar";
+import InventoryManager from "./InventoryManager";
+
+// Load the calendar code when its section is opened.
+const MealCalendar = lazy(() => import("./MealCalendar"));
 
 interface User {
   id: number;
@@ -13,7 +16,7 @@ interface AppState {
   status: "checking" | "ready" | "offline";
   user: User | null;
   mode: "login" | "register";
-  section: "recipes" | "calendar";
+  section: "recipes" | "calendar" | "inventory";
   name: string;
   email: string;
   password: string;
@@ -137,6 +140,18 @@ export default class App extends Component<Record<string, never>, AppState> {
 
   private openRecipes = (): void => { this.setState({ section: "recipes" }); };
 
+  private renderSection(userId: number) {
+    if (this.state.section === "calendar") {
+      return <Suspense fallback={<p role="status">Loading meal calendar...</p>}>
+        <MealCalendar key={userId} onSessionExpired={this.sessionExpired} onOpenRecipes={this.openRecipes} />
+      </Suspense>;
+    }
+    if (this.state.section === "inventory") {
+      return <InventoryManager key={userId} onSessionExpired={this.sessionExpired} />;
+    }
+    return <RecipeManager key={userId} onSessionExpired={this.sessionExpired} />;
+  }
+
   private renderForm() {
     const { mode, name, email, password, pending, error } = this.state;
     const registering = mode === "register";
@@ -216,9 +231,11 @@ export default class App extends Component<Record<string, never>, AppState> {
             <button type="button" className={section === "calendar" ? "" : "secondary"}
               aria-pressed={section === "calendar"} disabled={pending}
               onClick={() => this.setState({ section: "calendar" })}>Meal calendar</button>
+            <button type="button" className={section === "inventory" ? "" : "secondary"}
+              aria-pressed={section === "inventory"} disabled={pending}
+              onClick={() => this.setState({ section: "inventory" })}>Kitchen inventory</button>
           </nav>
-          {section === "recipes" ? <RecipeManager key={user.id} onSessionExpired={this.sessionExpired} /> :
-            <MealCalendar key={user.id} onSessionExpired={this.sessionExpired} onOpenRecipes={this.openRecipes} />}
+          {this.renderSection(user.id)}
           </>
         ) : this.renderForm())}
       </main>
