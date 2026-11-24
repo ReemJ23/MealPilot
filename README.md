@@ -16,7 +16,9 @@ Kitchen inventory lets users keep a personal ingredient list with optional quant
 
 The shopping list supports manual items and purchased checkboxes. Users can also compare planned meals with their inventory, review missing ingredients, and add selected suggestions to their list.
 
-External recipe browsing will be added in a later branch.
+Use **Discover recipes** in **My recipes** to search TheMealDB by name, read recipe details, and open an editable copy before saving. Check preparation time, servings and ingredient quantities because TheMealDB provides some measurements as free text and does not reliably supply time or serving counts. A quantity that cannot be parsed starts at 1 and is explicitly flagged for review. Saving creates an ordinary personal recipe in MySQL. The original external recipe is not changed.
+
+TheMealDB's free development key is used for this educational project. Production use may require a supporter key under TheMealDB's terms.
 
 Passwords are stored as salted scrypt hashes. Login uses an HttpOnly cookie and a database session that expires after seven days. Logout invalidates that session on the server. The hashing settings follow the [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
