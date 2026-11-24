@@ -21,6 +21,7 @@ export type RecipeSummary = Pick<Recipe, "id" | "name" | "category" | "preparati
 
 interface RecipeFormProps {
   recipe: Recipe | null;
+  initialRecipe?: RecipeInput | null;
   pending: boolean;
   error: string;
   onSave: (recipe: RecipeInput) => void;
@@ -42,7 +43,7 @@ export default class RecipeForm extends Component<RecipeFormProps, RecipeFormSta
 
   constructor(props: RecipeFormProps) {
     super(props);
-    const recipe = props.recipe;
+    const recipe = props.recipe ?? props.initialRecipe;
     this.state = {
       name: recipe?.name ?? "", category: recipe?.category ?? "",
       preparationTime: String(recipe?.preparationTime ?? 15), servings: String(recipe?.servings ?? 2),

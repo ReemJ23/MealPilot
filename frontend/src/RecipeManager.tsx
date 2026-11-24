@@ -1,10 +1,11 @@
 import { Component } from "react";
 import RecipeForm from "./RecipeForm";
+import RecipeDiscovery from "./RecipeDiscovery";
 import type { Recipe, RecipeInput, RecipeSummary } from "./RecipeForm";
 
 interface RecipeManagerProps { onSessionExpired: () => void }
 interface RecipeManagerState {
-  view: "list" | "detail" | "form";
+  view: "list" | "detail" | "form" | "discover";
   recipes: RecipeSummary[];
   selected: Recipe | null;
   detailId: number | null;
@@ -123,9 +124,14 @@ export default class RecipeManager extends Component<RecipeManagerProps, RecipeM
       <section className="recipe-collection" aria-labelledby="recipes-heading">
         <div className="section-heading">
           <h2 id="recipes-heading">My recipes</h2>
-          <button type="button" disabled={loading || Boolean(error)} onClick={() => this.setState({ view: "form", selected: null, error: "" })}>
-            New recipe
-          </button>
+          <div className="actions">
+            <button type="button" className="secondary" disabled={loading} onClick={() => this.setState({ view: "discover", error: "" })}>
+              Discover recipes
+            </button>
+            <button type="button" disabled={loading || Boolean(error)} onClick={() => this.setState({ view: "form", selected: null, error: "" })}>
+              New recipe
+            </button>
+          </div>
         </div>
         {loading ? <p role="status">Loading recipes...</p> : error ? (
           <div className="card">
@@ -195,6 +201,13 @@ export default class RecipeManager extends Component<RecipeManagerProps, RecipeM
   }
 
   override render() {
+    if (this.state.view === "discover") {
+      return <RecipeDiscovery onCancel={this.showList} onSessionExpired={this.props.onSessionExpired}
+        onSaved={(recipe) => this.setState(({ recipes }) => ({
+          recipes: [...recipes.filter((entry) => entry.id !== recipe.id), recipe].sort((a, b) => b.id - a.id),
+          selected: recipe, detailId: recipe.id, view: "detail", loading: false, error: "",
+        }))} />;
+    }
     if (this.state.view === "form") {
       return <RecipeForm recipe={this.state.selected} pending={this.state.pending} error={this.state.error}
         onSave={(input) => void this.saveRecipe(input)} onCancel={() => {
