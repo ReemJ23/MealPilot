@@ -169,6 +169,14 @@ textarea { resize: vertical; line-height: 1.6; }
 .meal-form { margin-top: 20px; }
 .meal-form .actions { margin-top: 8px; }
 .meal-calendar-title { font-size: 1.2rem; }
+.kitchen-inventory { margin-top: 32px; }
+.inventory-list { display: grid; gap: 16px; margin-top: 24px; }
+.inventory-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 22px; border: 1px solid #d8e2d8; border-radius: 10px; background: white; }
+.inventory-item > div:first-child { min-width: 0; }
+.inventory-item h3, .empty-inventory h3 { margin: 0; overflow-wrap: anywhere; }
+.inventory-item p { margin: 8px 0 0; color: #59645c; overflow-wrap: anywhere; }
+.empty-inventory p { margin-bottom: 0; color: #59645c; }
+.inventory-form h3 { margin: 0 0 20px; }
 
 @media (max-width: 700px) {
   .meal-calendar-toolbar { flex-wrap: wrap; gap: 12px; }

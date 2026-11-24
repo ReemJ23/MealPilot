@@ -6,6 +6,8 @@ import { RecipeController } from "./RecipeController.js";
 import type { RecipeStore } from "./RecipeRepository.js";
 import { MealPlanController } from "./MealPlanController.js";
 import type { MealPlanStore } from "./MealPlanRepository.js";
+import { InventoryController } from "./InventoryController.js";
+import type { InventoryStore } from "./InventoryRepository.js";
 
 /** Keep application construction separate from opening a network port. */
 export class Application {
@@ -13,7 +15,7 @@ export class Application {
   readonly auth: AuthController;
 
   constructor(repository: AccountStore, options: {
-    origin?: string; secureCookies?: boolean; recipes?: RecipeStore; meals?: MealPlanStore;
+    origin?: string; secureCookies?: boolean; recipes?: RecipeStore; meals?: MealPlanStore; inventory?: InventoryStore;
   } = {}) {
     this.app = express();
     this.app.disable("x-powered-by");
@@ -47,6 +49,9 @@ export class Application {
     }
     if (options.meals) {
       this.app.use("/api/meals", this.auth.requireUser, new MealPlanController(options.meals).router);
+    }
+    if (options.inventory) {
+      this.app.use("/api/inventory", this.auth.requireUser, new InventoryController(options.inventory).router);
     }
 
     this.app.use((_request, response) => {

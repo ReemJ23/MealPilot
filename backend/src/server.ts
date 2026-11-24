@@ -2,6 +2,7 @@ import { Application } from "./Application.js";
 import { AuthRepository } from "./AuthRepository.js";
 import { RecipeRepository } from "./RecipeRepository.js";
 import { MealPlanRepository } from "./MealPlanRepository.js";
+import { InventoryRepository } from "./InventoryRepository.js";
 import { createDatabasePool } from "./database.js";
 
 const pool = createDatabasePool();
@@ -10,6 +11,7 @@ const application = new Application(new AuthRepository(pool), {
   secureCookies: process.env.NODE_ENV === "production",
   recipes: new RecipeRepository(pool),
   meals: new MealPlanRepository(pool),
+  inventory: new InventoryRepository(pool),
 });
 const port = Number(process.env.PORT || 3000);
 
