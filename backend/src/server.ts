@@ -1,4 +1,5 @@
 import { Application } from "./Application.js";
+import { fileURLToPath } from "node:url";
 import { AuthRepository } from "./AuthRepository.js";
 import { RecipeRepository } from "./RecipeRepository.js";
 import { MealPlanRepository } from "./MealPlanRepository.js";
@@ -14,14 +15,19 @@ const application = new Application(new AuthRepository(pool), {
   meals: new MealPlanRepository(pool),
   inventory: new InventoryRepository(pool),
   shopping: new ShoppingListRepository(pool),
+  // Docker and release builds include the Vite output alongside the API.
+  staticDirectory: process.env.SERVE_FRONTEND === "true"
+    ? fileURLToPath(new URL("../../frontend/dist/", import.meta.url)) : undefined,
 });
 const port = Number(process.env.PORT || 3000);
 
 try {
   // Fail early with a useful message if the database has not been set up.
   await pool.query("SELECT id FROM users LIMIT 1");
-  const server = application.app.listen(port, "127.0.0.1", () => {
-    console.log(`MealPilot API is running at http://127.0.0.1:${port}`);
+  // A container listens on all interfaces; local development stays on loopback.
+  const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+  const server = application.app.listen(port, host, () => {
+    console.log(`MealPilot is running on ${host}:${port}`);
   });
 
   const shutdown = (): void => {

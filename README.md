@@ -143,3 +143,17 @@ The root npm workspace configuration lets both applications share one installati
 The build command writes files to `frontend/dist` and `backend/dist`. The compiled backend starts with `npm.cmd run start --workspace backend`. To check the built frontend locally, run `npm.cmd run preview --workspace frontend` in another terminal.
 
 Production hosting and automated deployment will be added in the deployment branch. That configuration must provide a persistent database and HTTPS, set `APP_ORIGIN` to the deployed frontend address, and use `NODE_ENV=production` for Secure cookies. The local preview uses the development settings.
+
+## Automated release and deployment
+
+The CI workflow still runs ESLint, TypeScript checks, application tests and database integration tests on every push and pull request.
+
+After changes are merged into `main`, `.github/workflows/release.yml` verifies the code again, uploads a compiled release archive under **GitHub Actions > Artifacts**, and publishes a versioned Docker image to GitHub Container Registry. A Git tag beginning with `v` also creates a GitHub Release with the archive attached.
+
+The production container serves the compiled React interface and Express API from the same HTTPS origin. It initializes missing MySQL tables on startup and leaves existing data in place. MySQL uses a persistent Docker volume. TheMealDB requires outbound internet access from the user's browser.
+
+For an HTTPS deployment, provide a server with Docker Compose, a domain pointing to the server, and ports 80 and 443 open. In `deploy`, copy `.env.example` to `.env`, replace its placeholder domain and passwords, and run `docker compose up --build -d`. Caddy automatically obtains HTTPS certificates. Do not commit `.env` or database passwords. To update after a merged release, run `docker compose pull app` then `docker compose up -d`. See `deploy/README.md` for detailed setup and backup notes.
+
+**Automated publishing is configured, but a live hosted deployment requires a server and domain.** No external hosting account or server has been configured by this repository. GitHub Actions cannot deploy to an unspecified host.
+
+To test the compiled frontend locally without Docker, run `npm.cmd run build`, set `SERVE_FRONTEND=true` and `APP_ORIGIN=http://127.0.0.1:3000` with `NODE_ENV=development`, start the backend, and visit `http://127.0.0.1:3000`. Keep MySQL running. Clear those temporary settings before returning to normal Vite development.
