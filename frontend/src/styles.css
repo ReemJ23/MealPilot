@@ -177,6 +177,24 @@ textarea { resize: vertical; line-height: 1.6; }
 .inventory-item p { margin: 8px 0 0; color: #59645c; overflow-wrap: anywhere; }
 .empty-inventory p { margin-bottom: 0; color: #59645c; }
 .inventory-form h3 { margin: 0 0 20px; }
+.shopping-list { margin-top: 32px; }
+.shopping-form h3, .empty-shopping h3 { margin: 0 0 20px; }
+.shopping-help, .empty-shopping p { color: #59645c; }
+.shopping-items { display: grid; gap: 16px; margin-top: 24px; }
+.shopping-item { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px; border: 1px solid #d8e2d8; border-radius: 10px; background: white; }
+.shopping-details { min-width: 0; flex: 1 1 180px; }
+.shopping-details h3 { margin: 0; overflow-wrap: anywhere; }
+.shopping-details p { margin: 8px 0 0; color: #59645c; overflow-wrap: anywhere; }
+.purchased .shopping-details h3 { text-decoration: line-through; color: #59645c; }
+.shopping-check { display: flex; align-items: center; gap: 10px; margin: 0; font-weight: 400; cursor: pointer; }
+.shopping-check input { width: 18px; height: 18px; margin: 0; padding: 0; flex-shrink: 0; accent-color: #245b3e; }
+.shopping-preview { margin-top: 24px; }
+.shopping-preview h4 { margin: 0 0 16px; }
+.shopping-suggestions { display: grid; gap: 12px; margin-bottom: 20px; }
+.shopping-suggestion { align-items: flex-start; padding: 14px; border: 1px solid #d8e2d8; border-radius: 6px; overflow-wrap: anywhere; }
+.shopping-suggestion > span { min-width: 0; }
+.shopping-note { display: block; margin-top: 6px; color: #735121; font-size: .875rem; }
+.shopping-cancel { display: block; margin-top: 20px; }
 
 @media (max-width: 700px) {
   .meal-calendar-toolbar { flex-wrap: wrap; gap: 12px; }

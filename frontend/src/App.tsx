@@ -2,6 +2,7 @@ import { Component, lazy, Suspense } from "react";
 import type { FormEvent } from "react";
 import RecipeManager from "./RecipeManager";
 import InventoryManager from "./InventoryManager";
+import ShoppingListManager from "./ShoppingListManager";
 
 // Load the calendar code when its section is opened.
 const MealCalendar = lazy(() => import("./MealCalendar"));
@@ -16,7 +17,7 @@ interface AppState {
   status: "checking" | "ready" | "offline";
   user: User | null;
   mode: "login" | "register";
-  section: "recipes" | "calendar" | "inventory";
+  section: "recipes" | "calendar" | "inventory" | "shopping";
   name: string;
   email: string;
   password: string;
@@ -149,6 +150,9 @@ export default class App extends Component<Record<string, never>, AppState> {
     if (this.state.section === "inventory") {
       return <InventoryManager key={userId} onSessionExpired={this.sessionExpired} />;
     }
+    if (this.state.section === "shopping") {
+      return <ShoppingListManager key={userId} onSessionExpired={this.sessionExpired} />;
+    }
     return <RecipeManager key={userId} onSessionExpired={this.sessionExpired} />;
   }
 
@@ -234,6 +238,9 @@ export default class App extends Component<Record<string, never>, AppState> {
             <button type="button" className={section === "inventory" ? "" : "secondary"}
               aria-pressed={section === "inventory"} disabled={pending}
               onClick={() => this.setState({ section: "inventory" })}>Kitchen inventory</button>
+            <button type="button" className={section === "shopping" ? "" : "secondary"}
+              aria-pressed={section === "shopping"} disabled={pending}
+              onClick={() => this.setState({ section: "shopping" })}>Shopping list</button>
           </nav>
           {this.renderSection(user.id)}
           </>

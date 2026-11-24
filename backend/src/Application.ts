@@ -8,6 +8,8 @@ import { MealPlanController } from "./MealPlanController.js";
 import type { MealPlanStore } from "./MealPlanRepository.js";
 import { InventoryController } from "./InventoryController.js";
 import type { InventoryStore } from "./InventoryRepository.js";
+import { ShoppingListController } from "./ShoppingListController.js";
+import type { ShoppingListStore } from "./ShoppingListRepository.js";
 
 /** Keep application construction separate from opening a network port. */
 export class Application {
@@ -16,6 +18,7 @@ export class Application {
 
   constructor(repository: AccountStore, options: {
     origin?: string; secureCookies?: boolean; recipes?: RecipeStore; meals?: MealPlanStore; inventory?: InventoryStore;
+    shopping?: ShoppingListStore;
   } = {}) {
     this.app = express();
     this.app.disable("x-powered-by");
@@ -52,6 +55,9 @@ export class Application {
     }
     if (options.inventory) {
       this.app.use("/api/inventory", this.auth.requireUser, new InventoryController(options.inventory).router);
+    }
+    if (options.shopping) {
+      this.app.use("/api/shopping-list", this.auth.requireUser, new ShoppingListController(options.shopping).router);
     }
 
     this.app.use((_request, response) => {

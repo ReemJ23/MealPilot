@@ -3,6 +3,7 @@ import { AuthRepository } from "./AuthRepository.js";
 import { RecipeRepository } from "./RecipeRepository.js";
 import { MealPlanRepository } from "./MealPlanRepository.js";
 import { InventoryRepository } from "./InventoryRepository.js";
+import { ShoppingListRepository } from "./ShoppingListRepository.js";
 import { createDatabasePool } from "./database.js";
 
 const pool = createDatabasePool();
@@ -12,6 +13,7 @@ const application = new Application(new AuthRepository(pool), {
   recipes: new RecipeRepository(pool),
   meals: new MealPlanRepository(pool),
   inventory: new InventoryRepository(pool),
+  shopping: new ShoppingListRepository(pool),
 });
 const port = Number(process.env.PORT || 3000);
 

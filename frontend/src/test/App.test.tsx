@@ -266,3 +266,69 @@ describe("MealPilot inventory navigation", () => {
     expect(screen.queryByRole("heading", { name: "Flour" })).not.toBeInTheDocument();
   });
 });
+
+describe("MealPilot shopping list navigation", () => {
+  it("opens the shopping list and refreshes it when the user returns", async () => {
+    const shoppingFetch = vi.fn().mockResolvedValueOnce(jsonResponse({ items: [] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [{ id: 3, name: "Flour", quantity: 2, unit: "kg", purchased: false }] }));
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      if (String(input) === "/api/shopping-list") return shoppingFetch();
+      return Promise.resolve(String(input) === "/api/auth/me" ? jsonResponse({ user }) : jsonResponse({ recipes: [] }));
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+
+    expect(await screen.findByText("Your shopping list is empty")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Shopping list" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "My recipes" }));
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+    expect(await screen.findByRole("heading", { name: "Flour" })).toBeInTheDocument();
+    expect(shoppingFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns to login when the shopping API reports an expired session", async () => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => Promise.resolve(
+      String(input) === "/api/auth/me" ? jsonResponse({ user }) :
+        String(input) === "/api/recipes" ? jsonResponse({ recipes: [] }) : loggedOut(),
+    ));
+    render(<App />);
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Your session has expired. Please log in again.");
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("does not show the previous account's shopping list after another user logs in", async () => {
+    const nextUser = { id: 2, name: "Sam", email: "sam@example.com" };
+    let signedInUser = user;
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/auth/logout") return Promise.resolve(new Response(null, { status: 204 }));
+      if (path === "/api/auth/login") signedInUser = nextUser;
+      if (path.startsWith("/api/auth")) return Promise.resolve(jsonResponse({ user: signedInUser }));
+      if (path === "/api/shopping-list") return Promise.resolve(jsonResponse({ items: signedInUser.id === 1 ? [
+        { id: 3, name: "Flour", quantity: 2, unit: "kg", purchased: false },
+      ] : [] }));
+      return Promise.resolve(jsonResponse({ recipes: [] }));
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "My recipes" });
+    fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+    await screen.findByRole("heading", { name: "Flour" });
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+    await screen.findByRole("heading", { name: "Welcome back" });
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: nextUser.email } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "MealPilot123!" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await screen.findByRole("heading", { name: "Welcome, Sam" });
+    expect(screen.getByRole("heading", { name: "My recipes" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Shopping list" }));
+
+    expect(await screen.findByText("Your shopping list is empty")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Flour" })).not.toBeInTheDocument();
+  });
+});

@@ -57,6 +57,20 @@ CREATE TABLE IF NOT EXISTS inventory_items (
   CONSTRAINT inventory_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Shopping items belong to one account and remain independent of planned meals.
+CREATE TABLE IF NOT EXISTS shopping_items (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  quantity DECIMAL(13,3) NULL DEFAULT NULL,
+  unit VARCHAR(30) NOT NULL DEFAULT '',
+  purchased BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX shopping_owner_status (user_id, purchased, name, id),
+  CONSTRAINT shopping_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Only a hash of each session token is stored in the database.
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
