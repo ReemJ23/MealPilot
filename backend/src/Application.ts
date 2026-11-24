@@ -1,4 +1,6 @@
 import express from "express";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { ErrorRequestHandler, Express } from "express";
 import { AuthController } from "./AuthController.js";
 import type { AccountStore } from "./AuthRepository.js";
@@ -18,7 +20,7 @@ export class Application {
 
   constructor(repository: AccountStore, options: {
     origin?: string; secureCookies?: boolean; recipes?: RecipeStore; meals?: MealPlanStore; inventory?: InventoryStore;
-    shopping?: ShoppingListStore;
+    shopping?: ShoppingListStore; staticDirectory?: string;
   } = {}) {
     this.app = express();
     this.app.disable("x-powered-by");
@@ -58,6 +60,18 @@ export class Application {
     }
     if (options.shopping) {
       this.app.use("/api/shopping-list", this.auth.requireUser, new ShoppingListController(options.shopping).router);
+    }
+
+    // In production Express serves the built frontend and the API from one origin.
+    if (options.staticDirectory && existsSync(join(options.staticDirectory, "index.html"))) {
+      this.app.use(express.static(options.staticDirectory));
+      this.app.get("/{*path}", (request, response, next) => {
+        if (request.path.startsWith("/api/") || !request.accepts("html")) {
+          next();
+          return;
+        }
+        response.sendFile(join(options.staticDirectory!, "index.html"));
+      });
     }
 
     this.app.use((_request, response) => {
