@@ -14,7 +14,9 @@ The meal calendar uses [FullCalendar](https://fullcalendar.io/docs/react) to sho
 
 Kitchen inventory lets users keep a personal ingredient list with optional quantities and units. They can add, view, edit, and remove items. Accounts and all personal data are saved in MySQL and belong to the signed-in user.
 
-Shopping lists and external recipe browsing will be added in later branches.
+The shopping list supports manual items and purchased checkboxes. Users can also compare planned meals with their inventory, review missing ingredients, and add selected suggestions to their list.
+
+External recipe browsing will be added in a later branch.
 
 Passwords are stored as salted scrypt hashes. Login uses an HttpOnly cookie and a database session that expires after seven days. Logout invalidates that session on the server. The hashing settings follow the [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt).
 
@@ -58,6 +60,22 @@ Open **Kitchen inventory** to record ingredients you have at home. Ingredient na
 
 On macOS or Linux, use `npm` instead of `npm.cmd` and `cp backend/.env.example backend/.env` to create the configuration.
 
+## Use the shopping list
+
+Open **Shopping list** to add or edit items. Quantity and unit are optional. A recorded shopping quantity must be positive and may have up to three decimal places. Use the purchased checkbox to track progress, or remove an item after confirming the action.
+
+Choose **Generate from meals**, select the full period you intend to shop for, and choose **Find missing ingredients**. Both dates are included. Review the suggested amounts, deselect any ingredients you do not want, and choose **Add selected ingredients**.
+
+The comparison follows these rules.
+
+- Each planned occurrence contributes the recipe's recorded ingredient amounts. The same ingredient used in several meals is combined.
+- Names and units match after ignoring capitalization and extra spaces. Use consistent names and units. For example, `g` and `kg` remain separate because the application does not convert units or recognize synonyms.
+- Recorded inventory amounts and unpurchased shopping quantities reduce the amount still needed. A selected shortage increases an existing matching unpurchased item with a recorded quantity, or creates a new item. Repeating generation for an unchanged period adds nothing further.
+- An unrecorded amount supplies no numeric credit. The preview flags matching inventory or shopping entries with unknown quantities so the user can check them before adding anything. Zero inventory means none remains.
+- Purchased items are excluded from the comparison. Marking an item purchased does not update inventory. Update **Kitchen inventory** after shopping before generating again. Planning a meal does not consume inventory automatically.
+
+Each account has one current shopping list. Generating suggestions preserves manual entries and purchased items. Saved shopping items remain independent of later recipe or calendar changes.
+
 ## Check the project
 
 ```powershell
@@ -82,7 +100,9 @@ These tests create the separate `mealpilot_test` database using the connection s
 | `npm.cmd run typecheck` | Check TypeScript |
 | `npm.cmd run build` | Build the applications |
 
-The tests cover authentication, input validation, CRUD operations, and frontend error handling. Ownership tests verify that one user cannot read or change another user's personal data. Database tests check persistence, session behavior, date storage, deletion rules, and transaction rollback when saving a recipe fails. Inventory tests distinguish an unrecorded quantity from zero and check decimal quantities. Backend API test files run sequentially to use the setting that passed on Windows.
+The tests cover authentication, input validation, CRUD operations, and frontend error handling. Ownership tests verify that one user cannot read or change another user's personal data. Database tests check persistence, session behavior, date storage, deletion rules, and transaction rollback when saving a recipe fails. Inventory tests distinguish an unrecorded quantity from zero and check decimal quantities.
+
+Shopping tests cover partial stock, combined meal requirements, selected suggestions, purchase status, and repeated generation. The calculation uses integer thousandths to avoid decimal subtraction errors. Backend API test files run sequentially to use the setting that passed on Windows.
 
 GitHub Actions runs both check commands on pushes and Pull Requests, using a MySQL 8.4 service for database tests. Check the Actions result after pushing. Local verification for this branch also used MariaDB 11.8.6.
 
@@ -97,6 +117,8 @@ In **Meal calendar**, add a saved recipe to a date. Refresh the page and reopen 
 In **Kitchen inventory**, add **Pasta** with quantity `500` and unit **g**. Add another ingredient with its quantity blank. Refresh the page and reopen the inventory to check persistence. Edit the pasta quantity to `0`, then change it to `250.5`. Cancel a removal once, then confirm removal. Check that the existing recipes and calendar entries remain. A second account should have its own inventory.
 
 For reproducible demo data, create **Tomato pasta**, category **Dinner**, preparation time **20** minutes, and **2** servings. Add **200 g pasta** and **300 g tomatoes**. Use **Cook the pasta. Simmer the chopped tomatoes and combine with the pasta.** as the instructions. No external service or seed account is required.
+
+For a repeatable shopping check, use a fresh account with empty inventory and no planned meals or shopping items. Create the demo recipe, plan it once for today, and record **50 g pasta** in inventory. Generate suggestions for today only. The result should be **150 g pasta** and **300 g tomatoes**. Add only pasta, then preview again. Only tomatoes should remain missing. Add tomatoes and confirm that repeating generation creates no additional amount. Mark an item purchased, refresh, and reopen **Shopping list** to check persistence. Also add a manual item with a blank quantity, edit it, and test cancelling and confirming removal. Another account should have its own list.
 
 ## Project structure
 
